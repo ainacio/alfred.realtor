@@ -1,0 +1,38 @@
+/* About.module.css */
+
+/* General styles */
+.aboutContainer {
+  text-align: center;
+  padding: 2rem;
+}
+
+.aboutProfileImage {
+  width: 200px;
+  border-radius: 50%;
+  margin: 1rem;
+}
+
+.aboutText {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.aboutContact {
+  font-weight: bold;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .aboutContainer {
+    padding: 1rem;
+  }
+
+  .aboutProfileImage {
+    width: 150px; /* Smaller profile image */
+  }
+
+  .aboutText {
+    font-size: 0.9rem; /* Smaller font for better fit */
+  }
+}

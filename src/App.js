@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import Home from "./Home";
-import About from "./components/About/About";
-import ChatPage from "./components/Chat/ChatPage";
-import Login from "./Login";
-import SuccessPage from "./SuccessPage";
+import Home from "components/Home/Home";
+import About from "components/About/About";
+import Login from "components/Login/Login";
+import ChatPage from "components/Chat/ChatPage";
+import SuccessPage from "components/Success/SuccessPage";
 
 const App = () => {
   const [user, setUser] = useState(null);
-  const [showChatError, setShowChatError] = useState(false);
-  const navigate = useNavigate();
-
   const auth = getAuth();
 
+  // Monitor authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -23,90 +21,61 @@ const App = () => {
 
   const handleLogout = () => {
     signOut(auth)
-      .then(() => {
-        console.log("Logged out successfully");
-        setUser(null);
-        navigate("/");
-      })
+      .then(() => setUser(null))
       .catch((error) => console.error("Logout error:", error));
   };
 
-  const handleChatClick = () => {
-    if (!user) {
-      setShowChatError(true);
-      setTimeout(() => setShowChatError(false), 3000); // Clear error after 3 seconds
-    } else {
-      navigate("/chat");
-    }
-  };
-
   return (
-    <div>
+    <Router>
       <nav
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "1rem",
-    backgroundColor: "rgb(30, 141, 176)",
-  }}
->
-  <div>
-    <Link to="/" style={{ color: "#fff", textDecoration: "none", marginRight: "1rem" }}>
-      Home
-    </Link>
-    <Link to="/about" style={{ color: "#fff", textDecoration: "none", marginRight: "1rem" }}>
-      About
-    </Link>
-    <Link
-      to={user ? "/chat" : "#"}
-      onClick={(e) => {
-        if (!user) {
-          e.preventDefault(); // Prevent navigation if user is not logged in
-          setShowChatError(true);
-          setTimeout(() => setShowChatError(false), 3000); // Clear error after 3 seconds
-        }
-      }}
-      style={{ color: "#fff", textDecoration: "none" }}
-    >
-      Chat
-    </Link>
-  </div>
-  <div>
-    {user ? (
-      <button
-        onClick={handleLogout}
         style={{
-          backgroundColor: "transparent",
-          color: "white",
-          border: "1px solid white",
-          borderRadius: "5px",
-          padding: "0.5rem 1rem",
-          cursor: "pointer",
+          display: "flex",
+          justifyContent: "space-between",
+          padding: "1rem",
+          backgroundColor: "rgb(30, 141, 176)",
         }}
       >
-        Logout
-      </button>
-    ) : (
-      <Link to="/login" style={{ color: "#fff", textDecoration: "none" }}>
-        Login
-      </Link>
-    )}
-  </div>
-</nav>
-
-      {showChatError && (
-        <p style={{ color: "red", textAlign: "center", marginTop: "1rem" }}>
-          Please log in to start chatting.
-        </p>
-      )}
+        <div>
+          <Link to="/" style={{ color: "#fff", textDecoration: "none", marginRight: "1rem" }}>
+            Home
+          </Link>
+          <Link to="/about" style={{ color: "#fff", textDecoration: "none", marginRight: "1rem" }}>
+            About
+          </Link>
+          <Link to="/chat" style={{ color: "#fff", textDecoration: "none" }}>
+            Chat
+          </Link>
+        </div>
+        <div>
+          {user ? (
+            <button
+              onClick={handleLogout}
+              style={{
+                backgroundColor: "transparent",
+                color: "white",
+                border: "1px solid white",
+                borderRadius: "5px",
+                padding: "0.5rem 1rem",
+                cursor: "pointer",
+              }}
+            >
+              Logout
+            </button>
+          ) : (
+            <Link to="/login" style={{ color: "#fff", textDecoration: "none" }}>
+              Login
+            </Link>
+          )}
+        </div>
+      </nav>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/success" element={<SuccessPage />} />
-        <Route path="/chat" element={user ? <ChatPage /> : <Login />} />
+        <Route path="/chat" element={<ChatPage />} />
       </Routes>
-    </div>
+    </Router>
   );
 };
 

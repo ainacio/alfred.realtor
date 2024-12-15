@@ -1,28 +1,38 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
-import { getAuth } from "firebase/auth";
-import app from "firebase-config";
+import React, { useState } from "react";
+import styles from "./ChatPage.module.css";
 
 const ChatPage = () => {
-  const auth = getAuth(app); // Use the initialized app
-  const user = auth.currentUser;
+  const [message, setMessage] = useState("");
+  const [conversation, setConversation] = useState([]);
 
-  if (!user) {
-    return (
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        <h1>Chat with Beta</h1>
-        <p>You must log in to access the chat feature.</p>
-        <a href="/login" style={{ color: "blue", textDecoration: "underline" }}>
-          Click here to log in
-        </a>
-      </div>
-    );
-  }
+  const sendMessage = () => {
+    if (message.trim()) {
+      setConversation([...conversation, { user: "You", text: message }]);
+      setMessage("");
+    }
+  };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "2rem" }}>
-      <h1>Welcome to the Chat Page</h1>
-      <p>Beta is here to assist you!</p>
+    <div className={styles.chatContainer}>
+      <h1>Chat</h1>
+      <div>
+        {conversation.map((msg, index) => (
+          <p key={index}>
+            <strong>{msg.user}: </strong>
+            {msg.text}
+          </p>
+        ))}
+      </div>
+      <input
+        type="text"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Type your message..."
+        className={styles.chatInput}
+      />
+      <button onClick={sendMessage} className={styles.chatButton}>
+        Send
+      </button>
     </div>
   );
 };
