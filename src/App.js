@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import Home from "./Home";
-import About from "./About";
-import ChatPage from "./ChatPage";
+import About from "./components/About/About";
+import ChatPage from "./components/Chat/ChatPage";
 import Login from "./Login";
 import SuccessPage from "./SuccessPage";
 

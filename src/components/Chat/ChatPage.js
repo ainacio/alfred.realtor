@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
-import app from "./firebase-config"; // Import app
+import app from "firebase-config";
 
 const ChatPage = () => {
   const auth = getAuth(app); // Use the initialized app
