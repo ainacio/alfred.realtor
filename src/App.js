@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import Home from "components/Home/Home";
-import About from "components/About/About";
-import Login from "components/Login/Login";
-import ChatPage from "components/Chat/ChatPage";
-import SuccessPage from "components/Success/SuccessPage";
+import Home from "./components/Home/Home";
+import About from "./components/About/About";
+import Login from "./components/Login/Login";
+import ChatPage from "./components/Chat/ChatPage";
+import SuccessPage from "./components/Success/SuccessPage";
+import LogoutSuccessPage from "./components/LogoutSuccessPage/LogoutSuccessPage";
+
+import "./index.css";
+import app from "./firebase-config";
+
+
+
 
 const App = () => {
   const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
   const auth = getAuth();
 
-  // Monitor authentication state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -21,61 +29,67 @@ const App = () => {
 
   const handleLogout = () => {
     signOut(auth)
-      .then(() => setUser(null))
+      .then(() => {
+        setUser(null);
+        navigate("/logout-success"); // Redirect to LogoutSuccessPage
+      })
       .catch((error) => console.error("Logout error:", error));
   };
 
+  const handleProtectedRoute = () => {
+    if (!user) {
+      setError("You must log in to start chatting.");
+      setTimeout(() => setError(""), 3000);
+    } else {
+      navigate("/chat");
+    }
+  };
+
   return (
-    <Router>
-      <nav
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          padding: "1rem",
-          backgroundColor: "rgb(30, 141, 176)",
-        }}
-      >
+    <>
+      <nav className="navbar">
         <div>
-          <Link to="/" style={{ color: "#fff", textDecoration: "none", marginRight: "1rem" }}>
+          <Link to="/" className="nav-link">
             Home
           </Link>
-          <Link to="/about" style={{ color: "#fff", textDecoration: "none", marginRight: "1rem" }}>
+          <Link to="/about" className="nav-link">
             About
           </Link>
-          <Link to="/chat" style={{ color: "#fff", textDecoration: "none" }}>
+          <Link
+            to="#"
+            onClick={(e) => {
+              e.preventDefault();
+              handleProtectedRoute();
+            }}
+            className="nav-link"
+          >
             Chat
           </Link>
         </div>
         <div>
           {user ? (
-            <button
-              onClick={handleLogout}
-              style={{
-                backgroundColor: "transparent",
-                color: "white",
-                border: "1px solid white",
-                borderRadius: "5px",
-                padding: "0.5rem 1rem",
-                cursor: "pointer",
-              }}
-            >
+            <button onClick={handleLogout} className="nav-button">
               Logout
             </button>
           ) : (
-            <Link to="/login" style={{ color: "#fff", textDecoration: "none" }}>
+            <Link to="/login" className="nav-link">
               Login
             </Link>
           )}
         </div>
       </nav>
+
+      {error && <div className="error-message">{error}</div>}
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
         <Route path="/success" element={<SuccessPage />} />
-        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/logout-success" element={<LogoutSuccessPage />} />
+        <Route path="/chat" element={user ? <ChatPage /> : <Home />} />
       </Routes>
-    </Router>
+    </>
   );
 };
 

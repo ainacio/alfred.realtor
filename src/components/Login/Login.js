@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 import styles from "./Login.module.css";
 
-const Login = ({ onLogin }) => {
+const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate(); // Add useNavigate hook
 
   const handleAuth = async () => {
     const auth = getAuth();
@@ -16,7 +18,7 @@ const Login = ({ onLogin }) => {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      onLogin();
+      navigate("/success"); // Redirect to SuccessPage after login
     } catch (err) {
       setError(err.message);
     }

@@ -1,38 +1,44 @@
-/* About.module.css */
-
-/* General styles */
-.aboutContainer {
+/* Container for the about section */
+.about-container {
   text-align: center;
   padding: 2rem;
+  font-family: Arial, sans-serif;
+  color: #333;
 }
 
-.aboutProfileImage {
-  width: 200px;
-  border-radius: 50%;
-  margin: 1rem;
-}
-
-.aboutText {
-  font-size: 1rem;
-  line-height: 1.5;
+/* Title styling */
+.about-title {
+  color: #1e8db0; /* Matches the blue header */
+  font-size: 2.5rem;
+  font-weight: bold;
   margin-bottom: 1rem;
 }
 
-.aboutContact {
-  font-weight: bold;
+/* Profile Image Styling */
+.about-image {
+  width: 180px; /* Adjust image size */
+  height: 180px;
+  border-radius: 50%; /* Makes it circular */
+  object-fit: cover;
+  border: 5px solid #1e8db0; /* Blue border matching title */
+  background-color: #f0f8ff; /* Light bluish background */
+  margin: 1rem auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
 }
 
-/* Responsive design for smaller screens */
-@media (max-width: 768px) {
-  .aboutContainer {
-    padding: 1rem;
-  }
+/* Text block styling */
+.about-text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 1rem auto;
+  max-width: 600px; /* Keeps text clean and centered */
+  color: #555;
+}
 
-  .aboutProfileImage {
-    width: 150px; /* Smaller profile image */
-  }
-
-  .aboutText {
-    font-size: 0.9rem; /* Smaller font for better fit */
-  }
+/* Contact section styling */
+.about-contact {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 1.5rem;
+  color: #000;
 }
