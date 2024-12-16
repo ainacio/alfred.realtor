@@ -78,6 +78,10 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
+.env.development
+.env.production
+.env.test
+*.env
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -132,3 +136,6 @@ dist
 
 # macOS system files
 .DS_Store
+
+# Ignore build output
+build/
