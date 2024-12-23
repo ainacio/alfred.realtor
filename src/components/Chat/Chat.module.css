@@ -1,0 +1,106 @@
+.chatContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    height: calc(100vh - 140px); /* Adjusted height to account for header and margins */
+    margin: 0 auto;
+    background-color: #ffffff;
+    border: 1px solid #c4c4c4;
+    border-radius: 10px;
+    box-sizing: border-box;
+    overflow: hidden; /* Prevent overflow */
+}
+
+.chatMessages {
+    width: 100%;
+    flex-grow: 1; /* Allow messages to grow */
+    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 15px;
+    background-color: #ffffff;
+    box-sizing: border-box;
+}
+
+.chatMessage {
+    margin: 10px 0;
+    max-width: 70%;
+    padding: 15px 20px;
+    border-radius: 15px;
+    word-wrap: break-word;
+    font-size: 20px;
+    line-height: 1.8;
+    font-weight: bold;
+}
+
+.chatMessage p {
+    color: #FFFFFF !important; /* Force white text for all messages */
+}
+
+.chatMessageUser {
+    align-self: flex-end;
+    background-color: #1E8EB0;
+    color: #FFFFFF !important;
+}
+
+.chatMessageAI {
+    align-self: flex-start;
+    background-color: #3A3F44;
+    color: #FFFFFF !important;
+}
+
+.chatForm {
+    display: flex;
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-top: 1px solid #c4c4c4;
+    box-sizing: border-box;
+}
+
+.chatInput {
+    flex: 1;
+    padding: 15px;
+    border: 1px solid #c4c4c4;
+    border-radius: 5px 0 0 5px;
+    font-size: 18px;
+    box-sizing: border-box;
+}
+
+.chatSendButton {
+    padding: 15px 20px;
+    background-color: #1E8EB0;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 0 5px 5px 0;
+    cursor: pointer;
+    font-size: 18px;
+    box-sizing: border-box;
+}
+
+.chatSendButton:hover {
+    background-color: #3A3F44;
+}
+
+.chatHeader {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+  }
+  
+  .fontSizeButton {
+    margin: 0 5px;
+    padding: 5px 10px;
+    background-color: #1E8EB0; /* Matches user message color */
+    color: #FFFFFF;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .fontSizeButton:hover {
+    background-color: #3A3F44; /* Matches AI message color */
+  }

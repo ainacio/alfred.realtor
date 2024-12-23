@@ -5,14 +5,13 @@ import Home from "./components/Home/Home";
 import About from "./components/About/About";
 import Login from "./components/Login/Login";
 import ChatPage from "./components/Chat/ChatPage";
+import Chat from "./components/Chat/Chat";
 import SuccessPage from "./components/Success/SuccessPage";
 import LogoutSuccessPage from "./components/LogoutSuccessPage/LogoutSuccessPage";
+import Settings from "./components/Settings/Settings";
 
 import "./index.css";
-import app from "./firebase-config";
-
-
-
+import app from "./firebase/firebase-config";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -67,6 +66,11 @@ const App = () => {
           </Link>
         </div>
         <div>
+          {user && (
+            <Link to="/settings" className="nav-link">
+              Settings
+            </Link>
+          )}
           {user ? (
             <button onClick={handleLogout} className="nav-button">
               Logout
@@ -88,6 +92,7 @@ const App = () => {
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/logout-success" element={<LogoutSuccessPage />} />
         <Route path="/chat" element={user ? <ChatPage /> : <Home />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </>
   );

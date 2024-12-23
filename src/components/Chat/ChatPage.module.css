@@ -1,32 +1,20 @@
-/* Styles for ChatPage.js */
-.chatContainer {
+.chatPageContainer {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem;
+    justify-content: flex-start;
+    padding: 0; /* Remove unnecessary padding */
+    margin: 0; /* Ensure no default margins */
+    background-color: #E8F1F5; /* Light blue-gray background */
+    height: 100vh; /* Use full viewport height */
+    box-sizing: border-box; /* Include padding and border in height calculation */
+    overflow: hidden; /* Prevent scrollbars from appearing */
   }
   
-  .chatInput {
-    width: 100%;
-    max-width: 500px;
-    margin: 1rem 0;
-    padding: 0.5rem;
-    font-size: 1rem;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-  }
-  
-  .chatButton {
-    padding: 0.5rem 1rem;
-    background-color: rgb(30, 141, 176);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-  
-  .chatButton:hover {
-    background-color: rgb(27, 126, 158);
+  .chatPageTitle {
+    font-size: 2rem;
+    color: #2B3133; /* Softer black for title text */
+    margin: 20px 0; /* Adjust spacing below the title */
+    text-align: center;
   }
   

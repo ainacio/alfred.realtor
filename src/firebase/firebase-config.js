@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -12,15 +13,16 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-console.log("Environment Variables:", process.env);
-console.log("API Key:", process.env.REACT_APP_FIREBASE_API_KEY);
+
+const db = getFirestore(app); // Firestore instance
 
 if (typeof window !== "undefined") {
   try {
-    getAnalytics(app);
+    getAnalytics(app); // Initialize Analytics if available
   } catch (error) {
     console.error("Google Analytics initialization error:", error);
   }
 }
 
-export default app;
+export { db }; // Export db for use in other files
+export default app; // Default export of the app

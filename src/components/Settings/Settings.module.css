@@ -1,0 +1,82 @@
+.settingsContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #f9f9f9;
+    min-height: calc(100vh - 80px); /* Adjust for navbar height */
+    box-sizing: border-box;
+}
+
+.settingsTitle {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1E8EB0; /* Brighter blue-teal */
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.settingsForm {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    background-color: #ffffff;
+    border: 1px solid #c4c4c4;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.settingsLabel {
+    font-size: 1rem;
+    color: #333333;
+    margin-bottom: 8px;
+}
+
+.settingsInput {
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #c4c4c4;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+.settingsInput:focus {
+    border-color: #1E8EB0; /* Highlighted blue-teal */
+    outline: none;
+    box-shadow: 0 0 5px rgba(30, 142, 176, 0.3);
+}
+
+.settingsButton {
+    padding: 10px 15px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #1E8EB0; /* Matches user message color */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s ease;
+}
+
+.settingsButton:hover {
+    background-color: #145d75; /* Darker blue for hover effect */
+}
+
+.settingsErrorMessage {
+    color: red;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.settingsSuccessMessage {
+    color: green;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    text-align: center;
+}
