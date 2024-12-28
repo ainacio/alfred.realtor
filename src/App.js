@@ -1,3 +1,5 @@
+// File: App.js
+// =====================================
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./components/Home/Home";
@@ -24,14 +26,16 @@ const App = () => {
 const RoutesWrapper = () => {
   const { user, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>; // Display a loader while checking auth state
+  if (loading) {
+    return <div>Loading...</div>; // Show loading screen until auth state is resolved
+  }
 
   return (
     <>
       <Navbar user={user} />
       <main>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home user={user} />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
           <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
@@ -44,5 +48,6 @@ const RoutesWrapper = () => {
     </>
   );
 };
+
 
 export default App;

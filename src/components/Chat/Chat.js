@@ -1,15 +1,17 @@
+// File: Chat.js
+// =====================================
 import React, { useState, useEffect } from "react";
-import { collection, addDoc, query, orderBy, onSnapshot, limit, Timestamp } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, query, orderBy, onSnapshot, limit, Timestamp } from "firebase/firestore";
 import { db } from "../../firebase/firebase-config";
-import { getOpenAIResponse } from "../../services/openaiService";
-import styles from "./Chat.module.css";
 import { getAuth } from "firebase/auth";
+import styles from "./Chat.module.css";
 
 const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState("");
   const [fontSize, setFontSize] = useState(16); // Default font size
   const [user, setUser] = useState(null);
+  const [userFirstName, setUserFirstName] = useState("User"); // First name from Firestore
 
   // Fetch current user data
   useEffect(() => {
@@ -17,10 +19,25 @@ const Chat = () => {
     const currentUser = auth.currentUser;
 
     if (currentUser) {
+      const fetchUserDetails = async () => {
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserFirstName(userData.firstName || "User");
+          }
+        } catch (error) {
+          console.error("Error fetching user details:", error);
+        }
+      };
+
       setUser({
         displayName: currentUser.displayName || "User",
         email: currentUser.email,
+        uid: currentUser.uid, // Include UID for Firestore rules
       });
+
+      fetchUserDetails();
     }
   }, []);
 
@@ -32,56 +49,90 @@ const Chat = () => {
       limit(50) // Limit query results to 50
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map((doc) => doc.data()));
+      setMessages(
+        snapshot.docs.map((doc) => {
+          const data = doc.data();
+          // Map senderId to user's displayName if available
+          return {
+            ...data,
+            senderName: data.senderId === user?.uid ? userFirstName : data.senderId === "Beta" ? "Beta" : "User",
+          };
+        })
+      );
     });
     return unsubscribe; // Cleanup listener on component unmount
-  }, []);
+  }, [user, userFirstName]);
 
   // Handle sending messages
   const sendMessage = async (e) => {
-    e.preventDefault();
-    if (userInput.trim()) {
-      const auth = getAuth();
-      if (!auth.currentUser) {
-        console.error("User is not authenticated. Cannot send message.");
-        return;
+    e.preventDefault(); // Prevent page reload
+
+    const auth = getAuth();
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      console.error("User is not authenticated. Cannot send message.");
+      return;
+    }
+
+    const userMessage = {
+      text: userInput.trim(),
+      senderId: currentUser.uid, // Use UID instead of email for Firestore rules
+      receiverId: "Beta", // Beta is the receiver
+      timestamp: Timestamp.fromDate(new Date()),
+    };
+
+    if (!userMessage.text || !userMessage.senderId || !userMessage.receiverId) {
+      console.error("Invalid message format:", userMessage);
+      return;
+    }
+
+    console.log("Sending user message:", userMessage);
+
+    try {
+      // Save user message to Firestore
+      await addDoc(collection(db, "messages"), userMessage);
+      console.log("Message successfully added to Firestore.");
+      setUserInput(""); // Clear input after sending
+
+      // Fetch Beta's response from the server
+      const response = await fetch("http://localhost:5001/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            { role: "user", content: `This user needs assistance with real estate: ${userMessage.text}` }
+          ],
+          user: { name: userFirstName },
+        }),
+      });
+
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch Beta's response.");
       }
 
-      const userName = user?.displayName || user?.email || "Unknown User";
+      const betaResponse = await response.json();
 
-      // Save user message
-      const userMessage = {
-        text: userInput,
-        sender: user?.email, // Ensure sender matches Firestore rules
-        receiver: "Beta", // Beta is the receiver
-        timestamp: Timestamp.fromDate(new Date()), // Convert to Firestore timestamp
-      };
+      // Extract the content from the response
+      const betaMessageContent = betaResponse?.content || null;
 
-      try {
-        console.log("Sending user message:", userMessage);
-        await addDoc(collection(db, "messages"), userMessage);
-        console.log("User message sent successfully.");
-
-        // Include user's name in the prompt to Beta
-        const prompt = `The user's name is ${userName}. Respond to their query accordingly: "${userInput}"`;
-
-        // Get AI response
-        const aiResponse = await getOpenAIResponse(prompt);
-        const aiMessage = {
-          text: aiResponse,
-          sender: "Beta", // Ensure sender is "Beta"
-          receiver: user?.email, // User is the receiver
-          timestamp: Timestamp.fromDate(new Date()), // Convert to Firestore timestamp
+      if (betaMessageContent) {
+        // Save Beta's response to Firestore
+        const betaMessage = {
+          text: betaMessageContent,
+          senderId: "Beta",
+          receiverId: currentUser.uid,
+          timestamp: Timestamp.fromDate(new Date()),
         };
 
-        console.log("Sending AI message:", aiMessage);
-        await addDoc(collection(db, "messages"), aiMessage);
-        console.log("AI message sent successfully.");
-      } catch (error) {
-        console.error("Error sending message:", error.message);
+        await addDoc(collection(db, "messages"), betaMessage);
+        console.log("Beta's response added to Firestore.");
+      } else {
+        console.error("Invalid Beta response format:", betaResponse);
       }
-
-      setUserInput(""); // Clear input field
+    } catch (error) {
+      console.error("Error sending message:", error.message);
     }
   };
 
@@ -107,13 +158,12 @@ const Chat = () => {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`${styles.chatMessage} ${
-              msg.sender === "Beta" ? styles.chatMessageAI : styles.chatMessageUser
-            }`}
+            className={`${styles.chatMessage} ${msg.senderId === "Beta" ? styles.chatMessageAI : styles.chatMessageUser
+              }`}
             style={{ fontSize: `${fontSize}px` }} // Apply dynamic font size
           >
             <p>
-              <strong>{msg.sender}:</strong> {msg.text}
+              <strong>{msg.senderName}:</strong> {msg.text}
             </p>
           </div>
         ))}

@@ -1,16 +1,20 @@
+// File: Home.js
+// =====================================
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import styles from "./Home.module.css";
 
 const Home = ({ user }) => {
   const navigate = useNavigate();
 
   const handleChatClick = () => {
+    console.log("Home user state:", user); // Debugging line
+
     if (!user) {
-      alert("You must log in to access the chat."); // Display an error message
-      navigate("/login"); // Redirect to the login page
+      alert("You must log in to access the chat.");
+      navigate("/login");
     } else {
-      navigate("/chat"); // Navigate to the chat page if logged in
+      navigate("/chat");
     }
   };
 

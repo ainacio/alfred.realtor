@@ -1,3 +1,5 @@
+// File: AuthContext.js
+// =====================================
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { fetchUserData } from "../services/userService";
@@ -24,6 +26,7 @@ export const AuthProvider = ({ children }) => {
       }
       setLoading(false);
     });
+
     return unsubscribe;
   }, []);
 

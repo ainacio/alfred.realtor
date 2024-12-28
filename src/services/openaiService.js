@@ -1,3 +1,6 @@
+// File: openaiService.js
+// =====================================
+
 export const getOpenAIResponse = async (userMessage) => {
     try {
       const response = await fetch("http://localhost:5001/api/chat", {
