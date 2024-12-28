@@ -1,61 +1,95 @@
-.settingsContainer {
+.settingsAvatarContainer {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .avatarPreview {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ccc;
+    margin-bottom: 10px;
+  }
+  
+  .avatarLabel {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-top: 10px;
+  }
+  
+  .avatarInput {
+    display: block;
+    margin-top: 5px;
+  }
+  
+
+.settingsContainer {
+    max-width: 800px;
+    margin: 20px auto;
     padding: 20px;
     background-color: #f9f9f9;
-    min-height: calc(100vh - 80px); /* Adjust for navbar height */
-    box-sizing: border-box;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .settingsTitle {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: bold;
-    color: #1E8EB0; /* Brighter blue-teal */
+    color: #1E8EB0;
     margin-bottom: 20px;
     text-align: center;
 }
 
 .settingsForm {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two-column layout */
+    gap: 20px; /* Spacing between fields */
     width: 100%;
-    max-width: 400px;
-    background-color: #ffffff;
-    border: 1px solid #c4c4c4;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.settingsLabel {
-    font-size: 1rem;
-    color: #333333;
-    margin-bottom: 8px;
-}
-
-.settingsInput {
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #c4c4c4;
-    border-radius: 5px;
-    margin-bottom: 20px;
+    max-width: 800px;
+    margin: 0 auto;
     box-sizing: border-box;
 }
 
-.settingsInput:focus {
-    border-color: #1E8EB0; /* Highlighted blue-teal */
+.settingsRow {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.settingsLabel {
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: #333333;
+}
+.settingsTextarea {
+    resize: both; /* Allow horizontal and vertical resizing */
+    overflow: auto;
+    min-height: 100px; /* Set a minimum height */
+    max-height: 200px; /* Optional: Restrict max height */
+    width: 100%; /* Ensure it doesn't overflow */
+    font-size: 1rem;
+    padding: 10px;
+    border: 1px solid #c4c4c4;
+    border-radius: 5px;
+    box-sizing: border-box; /* Include padding in width/height */
+}
+
+.settingsInput:focus, .settingsTextarea:focus {
+    border-color: #1E8EB0;
     outline: none;
     box-shadow: 0 0 5px rgba(30, 142, 176, 0.3);
 }
-
 .settingsButton {
+    grid-column: span 2; /* Make the button span the full width */
     padding: 10px 15px;
     font-size: 1rem;
     font-weight: bold;
     color: #ffffff;
-    background-color: #1E8EB0; /* Matches user message color */
+    background-color: #1E8EB0;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -64,19 +98,20 @@
 }
 
 .settingsButton:hover {
-    background-color: #145d75; /* Darker blue for hover effect */
+    background-color: #145d75;
 }
 
-.settingsErrorMessage {
-    color: red;
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-    text-align: center;
+.fieldset {
+    grid-column: 1 / -1;
+    border: 1px solid #c4c4c4;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 20px;
 }
 
-.settingsSuccessMessage {
-    color: green;
-    font-size: 0.9rem;
+.legend {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #1E8EB0;
     margin-bottom: 10px;
-    text-align: center;
 }

@@ -1,97 +1,79 @@
 import React, { useState } from "react";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import styles from "./Login.module.css";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState(""); // New state for display name
-  const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleAuth = async () => {
-    if (!email || !password || (isRegistering && !displayName)) {
-      setError("Please fill in all required fields.");
-      return;
-    }
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
-    setIsLoading(true); // Start loading
-    setError(""); // Clear previous errors
     const auth = getAuth();
-
     try {
-      if (isRegistering) {
-        // Register user
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-        // Set display name after registration
-        await updateProfile(userCredential.user, {
-          displayName,
-        });
-        console.log("Display name set to:", displayName);
-      } else {
-        // Sign in user
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-      navigate("/success"); // Redirect to SuccessPage
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/"); // Redirect to the desired page after login
     } catch (err) {
-      if (err.code === "auth/email-already-in-use") {
-        setError("This email is already registered. Please sign in.");
-      } else if (err.code === "auth/invalid-email") {
-        setError("Invalid email address.");
-      } else if (err.code === "auth/weak-password") {
-        setError("Password should be at least 6 characters.");
-      } else if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-        setError("Incorrect email or password.");
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
+      setError("Invalid email or password.");
+      console.error("Login error:", err);
     } finally {
-      setIsLoading(false); // End loading
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className={styles.loginContainer}>
-      <h1>{isRegistering ? "Register" : "Sign In"}</h1>
-      {isRegistering && (
+    <form onSubmit={handleLogin} className={styles.loginContainer}>
+      <h1>Login</h1>
+
+      <div className={styles.formGroup}>
+        <label htmlFor="email">Email</label>
         <input
-          type="text"
-          placeholder="Full Name"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
+          id="email"
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className={styles.loginInput}
+          autoComplete="username"
         />
-      )}
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className={styles.loginInput}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className={styles.loginInput}
-      />
-      <button
-        onClick={handleAuth}
-        className={styles.loginButton}
-        disabled={isLoading} // Disable button while loading
-      >
-        {isLoading ? "Please wait..." : isRegistering ? "Register" : "Sign In"}
-      </button>
-      <p className={styles.loginToggle} onClick={() => setIsRegistering(!isRegistering)}>
-        {isRegistering ? "Already have an account? Sign In" : "Don't have an account? Register"}
-      </p>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label htmlFor="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={styles.loginInput}
+          autoComplete="current-password"
+        />
+      </div>
+
       {error && <p className={styles.loginError}>{error}</p>}
-    </div>
+
+      <div className={styles.dynamicSpacing}>
+        <button type="submit" className={styles.loginButton} disabled={isLoading}>
+          {isLoading ? "Logging in..." : "Login"}
+        </button>
+      </div>
+
+      <div className={styles.dynamicSpacing}>
+        <p>
+          Don't have an account?{" "}
+          <a href="/register" className={styles.registerLink}>
+            Register
+          </a>
+        </p>
+      </div>
+    </form>
   );
 };
 

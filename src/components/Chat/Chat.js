@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { collection, addDoc, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, limit, Timestamp } from "firebase/firestore";
 import { db } from "../../firebase/firebase-config";
 import { getOpenAIResponse } from "../../services/openaiService";
 import styles from "./Chat.module.css";
@@ -26,7 +26,11 @@ const Chat = () => {
 
   // Fetch messages from Firestore in real-time
   useEffect(() => {
-    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    const q = query(
+      collection(db, "messages"),
+      orderBy("timestamp"),
+      limit(50) // Limit query results to 50
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setMessages(snapshot.docs.map((doc) => doc.data()));
     });
@@ -37,27 +41,45 @@ const Chat = () => {
   const sendMessage = async (e) => {
     e.preventDefault();
     if (userInput.trim()) {
+      const auth = getAuth();
+      if (!auth.currentUser) {
+        console.error("User is not authenticated. Cannot send message.");
+        return;
+      }
+
       const userName = user?.displayName || user?.email || "Unknown User";
 
       // Save user message
       const userMessage = {
         text: userInput,
-        sender: userName,
-        timestamp: new Date(),
+        sender: user?.email, // Ensure sender matches Firestore rules
+        receiver: "Beta", // Beta is the receiver
+        timestamp: Timestamp.fromDate(new Date()), // Convert to Firestore timestamp
       };
-      await addDoc(collection(db, "messages"), userMessage);
 
-      // Include user's name in the prompt to Beta
-      const prompt = `The user's name is ${userName}. Respond to their query accordingly: "${userInput}"`;
+      try {
+        console.log("Sending user message:", userMessage);
+        await addDoc(collection(db, "messages"), userMessage);
+        console.log("User message sent successfully.");
 
-      // Get AI response
-      const aiResponse = await getOpenAIResponse(prompt);
-      const aiMessage = {
-        text: aiResponse,
-        sender: "Beta", // Capitalized name
-        timestamp: new Date(),
-      };
-      await addDoc(collection(db, "messages"), aiMessage);
+        // Include user's name in the prompt to Beta
+        const prompt = `The user's name is ${userName}. Respond to their query accordingly: "${userInput}"`;
+
+        // Get AI response
+        const aiResponse = await getOpenAIResponse(prompt);
+        const aiMessage = {
+          text: aiResponse,
+          sender: "Beta", // Ensure sender is "Beta"
+          receiver: user?.email, // User is the receiver
+          timestamp: Timestamp.fromDate(new Date()), // Convert to Firestore timestamp
+        };
+
+        console.log("Sending AI message:", aiMessage);
+        await addDoc(collection(db, "messages"), aiMessage);
+        console.log("AI message sent successfully.");
+      } catch (error) {
+        console.error("Error sending message:", error.message);
+      }
 
       setUserInput(""); // Clear input field
     }
@@ -86,9 +108,7 @@ const Chat = () => {
           <div
             key={index}
             className={`${styles.chatMessage} ${
-              msg.sender === user?.displayName || msg.sender === user?.email || msg.sender === "Unknown User"
-                ? styles.chatMessageUser
-                : styles.chatMessageAI
+              msg.sender === "Beta" ? styles.chatMessageAI : styles.chatMessageUser
             }`}
             style={{ fontSize: `${fontSize}px` }} // Apply dynamic font size
           >

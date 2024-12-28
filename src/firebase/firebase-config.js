@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -12,17 +13,23 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
+// Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-const db = getFirestore(app); // Firestore instance
+// Firestore instance
+const db = getFirestore(app);
 
+// Analytics (optional)
 if (typeof window !== "undefined") {
   try {
-    getAnalytics(app); // Initialize Analytics if available
+    getAnalytics(app);
   } catch (error) {
     console.error("Google Analytics initialization error:", error);
   }
 }
 
-export { db }; // Export db for use in other files
+// Storage instance
+const storage = getStorage(app); // Initialize Storage instance
+
+export { db, storage }; // Export both Firestore and Storage
 export default app; // Default export of the app
