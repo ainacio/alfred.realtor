@@ -1,5 +1,5 @@
-// File: AuthContext.js
-// =====================================
+///AuthContext.js
+//////////////////////////
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { fetchUserData } from "../services/userService";
@@ -15,13 +15,27 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
         try {
+          console.log("User logged in:", authUser);
           const userData = await fetchUserData(authUser.uid);
-          setUser({ ...authUser, ...userData });
+          setUser({
+            uid: authUser.uid,
+            email: authUser.email,
+            displayName: authUser.displayName || "User",
+            firstName: userData?.firstName || "User",
+            photoURL: authUser.photoURL || null,
+            ...userData,
+          });
         } catch (error) {
-          console.error("Failed to fetch user data:", error);
-          setUser(authUser); // Fallback to auth data
+          console.error("Failed to fetch user data, using auth data as fallback:", error);
+          setUser({
+            uid: authUser.uid,
+            email: authUser.email,
+            displayName: authUser.displayName || "User",
+            firstName: "User",
+          });
         }
       } else {
+        console.log("User logged out");
         setUser(null);
       }
       setLoading(false);
@@ -35,6 +49,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await signOut(auth);
       setUser(null);
+      console.log("User logged out successfully");
     } catch (error) {
       console.error("Logout error:", error);
     }

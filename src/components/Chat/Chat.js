@@ -1,156 +1,205 @@
-// File: Chat.js
-// =====================================
-import React, { useState, useEffect } from "react";
-import { collection, addDoc, doc, getDoc, query, orderBy, onSnapshot, limit, Timestamp } from "firebase/firestore";
+import React, { useState, useEffect, useRef } from "react";
+import { collection, addDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase-config";
-import { getAuth } from "firebase/auth";
 import styles from "./Chat.module.css";
+import { useAuth } from "../../context/AuthContext";
+import { useChatContext } from "../../context/ChatContext";
+import { saveMessageToFirestore } from "../../services/firestoreService";
+import { getOpenAIResponse } from "../../services/openaiService";
 
 const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState("");
-  const [fontSize, setFontSize] = useState(16); // Default font size
-  const [user, setUser] = useState(null);
-  const [userFirstName, setUserFirstName] = useState("User"); // First name from Firestore
+  const [fontSize, setFontSize] = useState(16);
+  const [isSending, setIsSending] = useState(false);
+  const initializationLock = useRef(false);
 
-  // Fetch current user data
+  const { user, loading } = useAuth();
+  const { conversationId, setConversationId, assistantId, setAssistantId, threadId, setThreadId } = useChatContext();
+
+  // Initialize conversation, assistant, and thread
   useEffect(() => {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
+    if (loading || !user || initializationLock.current) return;
 
-    if (currentUser) {
-      const fetchUserDetails = async () => {
-        try {
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserFirstName(userData.firstName || "User");
-          }
-        } catch (error) {
-          console.error("Error fetching user details:", error);
+    const initializeChat = async () => {
+      try {
+        initializationLock.current = true;
+
+        console.log("Initializing assistant and thread for user:", user.firstName);
+
+        // Call backend to create assistant and thread
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/init`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName: user.firstName }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to initialize assistant and thread.");
         }
-      };
 
-      setUser({
-        displayName: currentUser.displayName || "User",
-        email: currentUser.email,
-        uid: currentUser.uid, // Include UID for Firestore rules
-      });
+        const { assistantId: newAssistantId, threadId: newThreadId } = await response.json();
+        console.log("Assistant and thread initialized:", { newAssistantId, newThreadId });
 
-      fetchUserDetails();
-    }
-  }, []);
+        setAssistantId(newAssistantId);
+        setThreadId(newThreadId);
 
-  // Fetch messages from Firestore in real-time
-  useEffect(() => {
-    const q = query(
-      collection(db, "messages"),
-      orderBy("timestamp"),
-      limit(50) // Limit query results to 50
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(
-        snapshot.docs.map((doc) => {
-          const data = doc.data();
-          // Map senderId to user's displayName if available
-          return {
-            ...data,
-            senderName: data.senderId === user?.uid ? userFirstName : data.senderId === "Beta" ? "Beta" : "User",
-          };
-        })
-      );
-    });
-    return unsubscribe; // Cleanup listener on component unmount
-  }, [user, userFirstName]);
+        // Create a new conversation in Firestore
+        const conversationsRef = collection(db, "conversations");
+        const newConversation = {
+          userId: user.uid,
+          assistantId: newAssistantId,
+          threadId: newThreadId,
+          createdAt: new Date().toISOString(),
+        };
 
-  // Handle sending messages
+        const conversationDocRef = await addDoc(conversationsRef, newConversation);
+        setConversationId(conversationDocRef.id);
+
+        console.log("New conversation created with ID:", conversationDocRef.id);
+      } catch (error) {
+        console.error("Error initializing conversation:", error.message);
+      }
+    };
+
+    initializeChat();
+  }, [loading, user, setAssistantId, setThreadId, setConversationId]);
+
+  // Send message and handle OpenAI response
   const sendMessage = async (e) => {
-    e.preventDefault(); // Prevent page reload
+    e.preventDefault();
 
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-
-    if (!currentUser) {
-      console.error("User is not authenticated. Cannot send message.");
+    if (!conversationId || !threadId || !userInput.trim()) {
+      console.error("Missing conversationId, threadId, or user input.");
       return;
     }
 
     const userMessage = {
-      text: userInput.trim(),
-      senderId: currentUser.uid, // Use UID instead of email for Firestore rules
-      receiverId: "Beta", // Beta is the receiver
-      timestamp: Timestamp.fromDate(new Date()),
+      content: userInput.trim(),
+      role: "user",
+      senderId: user.uid,
+      senderName: user.displayName || "User",
     };
 
-    if (!userMessage.text || !userMessage.senderId || !userMessage.receiverId) {
-      console.error("Invalid message format:", userMessage);
-      return;
-    }
+    // Optimistic UI update
+    setMessages((prev) => [...prev, userMessage]);
+    setUserInput("");
 
-    console.log("Sending user message:", userMessage);
-
+    setIsSending(true);
     try {
       // Save user message to Firestore
-      await addDoc(collection(db, "messages"), userMessage);
-      console.log("Message successfully added to Firestore.");
-      setUserInput(""); // Clear input after sending
+      await saveMessageToFirestore(conversationId, userMessage);
 
-      // Fetch Beta's response from the server
-      const response = await fetch("http://localhost:5001/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [
-            { role: "user", content: `This user needs assistance with real estate: ${userMessage.text}` }
-          ],
-          user: { name: userFirstName },
-        }),
-      });
-
+      // Fetch response from OpenAI
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/chat?assistantId=${assistantId}&threadId=${threadId}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch Beta's response.");
+        throw new Error("Failed to fetch assistant response.");
       }
 
-      const betaResponse = await response.json();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let partialMessage = "";
 
-      // Extract the content from the response
-      const betaMessageContent = betaResponse?.content || null;
+      // Process the SSE stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      if (betaMessageContent) {
-        // Save Beta's response to Firestore
-        const betaMessage = {
-          text: betaMessageContent,
-          senderId: "Beta",
-          receiverId: currentUser.uid,
-          timestamp: Timestamp.fromDate(new Date()),
-        };
+        const chunk = decoder.decode(value);
+        chunk.split("\n").forEach((line) => {
+          if (line.startsWith("data:")) {
+            const data = line.replace("data: ", "").trim();
 
-        await addDoc(collection(db, "messages"), betaMessage);
-        console.log("Beta's response added to Firestore.");
-      } else {
-        console.error("Invalid Beta response format:", betaResponse);
+            if (data === "[DONE]") {
+              // End of stream
+              return;
+            }
+
+            try {
+              const json = JSON.parse(data);
+              if (json.content) {
+                partialMessage += json.content;
+
+                // Update the assistant's message in the UI incrementally
+                setMessages((prev) => {
+                  const lastMessage = prev[prev.length - 1];
+                  if (lastMessage?.senderId === "Beta") {
+                    return [
+                      ...prev.slice(0, -1),
+                      { ...lastMessage, content: partialMessage },
+                    ];
+                  } else {
+                    return [
+                      ...prev,
+                      { content: partialMessage, role: "assistant", senderId: "Beta", senderName: "Beta" },
+                    ];
+                  }
+                });
+              }
+            } catch (err) {
+              console.error("Error parsing stream chunk:", err);
+            }
+          }
+        });
       }
+
+      // Save the final assistant message to Firestore
+      await saveMessageToFirestore(conversationId, {
+        content: partialMessage,
+        role: "assistant",
+        senderId: "Beta",
+        senderName: "Beta",
+      });
     } catch (error) {
       console.error("Error sending message:", error.message);
+    } finally {
+      setIsSending(false);
     }
   };
 
-  // Font size adjustment functions
-  const increaseFontSize = () => setFontSize((prev) => Math.min(prev + 2, 24)); // Max font size: 24px
-  const decreaseFontSize = () => setFontSize((prev) => Math.max(prev - 2, 12)); // Min font size: 12px
-  const resetFontSize = () => setFontSize(16); // Reset to default font size
+
+
+  const renderContent = (content) => {
+    if (typeof content === "string") {
+      return content;
+    } else if (Array.isArray(content)) {
+      return content.map((item, index) => <span key={index}>{item.text?.value || ""}</span>);
+    }
+    return "Invalid content";
+  };
+
+  const renderMessageSender = (msg) => {
+    if (msg.senderId === "Beta") {
+      return "Beta"; // Assistant's name
+    } else {
+      return user.firstName || "User"; // Only display the first name of the user
+    }
+  };
+
 
   return (
     <div className={styles.chatContainer}>
       <div className={styles.chatHeader}>
-        <button onClick={increaseFontSize} className={styles.fontSizeButton}>
+        <button
+          className={styles.fontSizeButton}
+          onClick={() => setFontSize((size) => Math.min(size + 2, 24))}
+        >
           A+
         </button>
-        <button onClick={decreaseFontSize} className={styles.fontSizeButton}>
+        <button
+          className={styles.fontSizeButton}
+          onClick={() => setFontSize((size) => Math.max(size - 2, 12))}
+        >
           A-
         </button>
-        <button onClick={resetFontSize} className={styles.fontSizeButton}>
+        <button className={styles.fontSizeButton} onClick={() => setFontSize(16)}>
           Reset
         </button>
       </div>
@@ -160,24 +209,24 @@ const Chat = () => {
             key={index}
             className={`${styles.chatMessage} ${msg.senderId === "Beta" ? styles.chatMessageAI : styles.chatMessageUser
               }`}
-            style={{ fontSize: `${fontSize}px` }} // Apply dynamic font size
+            style={{ fontSize: `${fontSize}px` }}
           >
-            <p>
-              <strong>{msg.senderName}:</strong> {msg.text}
-            </p>
+            <strong>{renderMessageSender(msg)}:</strong> {renderContent(msg.content)}
           </div>
         ))}
       </div>
+
       <form className={styles.chatForm} onSubmit={sendMessage}>
         <input
+          className={styles.chatInput}
           type="text"
           placeholder="Type a message..."
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
-          className={styles.chatInput}
+          disabled={isSending}
         />
-        <button type="submit" className={styles.chatSendButton}>
-          Send
+        <button className={styles.chatSendButton} type="submit" disabled={isSending}>
+          {isSending ? "Sending..." : "Send"}
         </button>
       </form>
     </div>
