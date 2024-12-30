@@ -17,6 +17,9 @@ const Chat = () => {
   const { user, loading } = useAuth();
   const { conversationId, setConversationId, assistantId, setAssistantId, threadId, setThreadId } = useChatContext();
 
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+
   // Initialize conversation, assistant, and thread
   useEffect(() => {
     if (loading || !user || initializationLock.current) return;
@@ -24,10 +27,10 @@ const Chat = () => {
     const initializeChat = async () => {
       try {
         initializationLock.current = true;
+        setIsInitializing(true); // Start initialization loading
 
         console.log("Initializing assistant and thread for user:", user.firstName);
 
-        // Call backend to create assistant and thread
         const response = await fetch(`${process.env.REACT_APP_API_URL}/api/init`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -39,12 +42,9 @@ const Chat = () => {
         }
 
         const { assistantId: newAssistantId, threadId: newThreadId } = await response.json();
-        console.log("Assistant and thread initialized:", { newAssistantId, newThreadId });
-
         setAssistantId(newAssistantId);
         setThreadId(newThreadId);
 
-        // Create a new conversation in Firestore
         const conversationsRef = collection(db, "conversations");
         const newConversation = {
           userId: user.uid,
@@ -59,6 +59,8 @@ const Chat = () => {
         console.log("New conversation created with ID:", conversationDocRef.id);
       } catch (error) {
         console.error("Error initializing conversation:", error.message);
+      } finally {
+        setIsInitializing(false); // End initialization loading
       }
     };
 
@@ -84,6 +86,7 @@ const Chat = () => {
     // Optimistic UI update
     setMessages((prev) => [...prev, userMessage]);
     setUserInput("");
+    setIsTyping(true); // Start typing indicator
 
     setIsSending(true);
     try {
@@ -119,6 +122,7 @@ const Chat = () => {
 
             if (data === "[DONE]") {
               // End of stream
+              reader.cancel(); // Explicitly close the reader when done
               return;
             }
 
@@ -161,6 +165,7 @@ const Chat = () => {
       console.error("Error sending message:", error.message);
     } finally {
       setIsSending(false);
+      setIsTyping(false); // Stop typing indicator
     }
   };
 
@@ -182,6 +187,15 @@ const Chat = () => {
       return user.firstName || "User"; // Only display the first name of the user
     }
   };
+
+
+  if (isInitializing) {
+    return (
+      <div className={styles.loadingContainer}>
+        <p>Loading chat...</p>
+      </div>
+    );
+  }
 
 
   return (
@@ -214,6 +228,13 @@ const Chat = () => {
             <strong>{renderMessageSender(msg)}:</strong> {renderContent(msg.content)}
           </div>
         ))}
+        {isTyping && (
+          <div className={styles.typingIndicator}>
+            <span>.</span>
+            <span>.</span>
+            <span>.</span>
+          </div>
+        )}
       </div>
 
       <form className={styles.chatForm} onSubmit={sendMessage}>
@@ -223,9 +244,9 @@ const Chat = () => {
           placeholder="Type a message..."
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
-          disabled={isSending}
+          disabled={isSending || isInitializing}
         />
-        <button className={styles.chatSendButton} type="submit" disabled={isSending}>
+        <button className={styles.chatSendButton} type="submit" disabled={isSending || isInitializing}>
           {isSending ? "Sending..." : "Send"}
         </button>
       </form>
