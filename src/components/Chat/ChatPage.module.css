@@ -1,20 +1,45 @@
 .chatPageContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 0; /* Remove unnecessary padding */
-    margin: 0; /* Ensure no default margins */
-    background-color: #E8F1F5; /* Light blue-gray background */
-    height: 100vh; /* Use full viewport height */
-    box-sizing: border-box; /* Include padding and border in height calculation */
-    overflow: hidden; /* Prevent scrollbars from appearing */
-  }
-  
-  .chatPageTitle {
-    font-size: 2rem;
-    color: #2B3133; /* Softer black for title text */
-    margin: 20px 0; /* Adjust spacing below the title */
-    text-align: center;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: calc(100vh - 56px); /* Account for navbar height */
+  background-color: #E8F1F5;
+  box-sizing: border-box;
+  overflow: hidden; /* Prevent unintended scrollbars */
+}
+
+.chatPageTitle {
+  margin: 0;
+  padding: 10px 0; /* Consistent padding for the title */
+  font-size: 24px;
+  color: #2B3133;
+  text-align: center;
+  transition: opacity 0.5s ease, transform 0.5s ease; /* Smooth fade and slide */
+}
+
+.chatContainer {
+  flex-grow: 1; /* Allow container to grow and fill available height */
+  width: 100%;
+  max-width: 600px; /* Constrain width for readability */
+  overflow: hidden; /* Prevent unintended scrollbars */
+  background-color: #ffffff;
+  border: 1px solid #c4c4c4;
+  border-radius: 10px;
+  box-sizing: border-box; /* Include padding and borders in size */
+  padding: 0; /* Remove any padding for consistent layout */
+}
+
+.chatForm {
+  height: 50px; /* Fixed height for chat input */
+  background-color: #f8f8f8;
+  border-top: 1px solid #c4c4c4;
+  box-sizing: border-box; /* Include padding/borders in size */
+  width: 100%; /* Ensure full width of the container */
+}
+
+.debugBorder {
+  border: 2px dashed red; /* Red border for debugging layout */
+  background-color: rgba(255, 0, 0, 0.1); /* Light red background for visibility */
+}

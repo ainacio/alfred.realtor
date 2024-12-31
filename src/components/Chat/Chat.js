@@ -1,3 +1,5 @@
+///Chat.js
+////////////////////
 import React, { useState, useEffect, useRef } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase-config";
@@ -7,11 +9,13 @@ import { useChatContext } from "../../context/ChatContext";
 import { saveMessageToFirestore } from "../../services/firestoreService";
 import { getOpenAIResponse } from "../../services/openaiService";
 
-const Chat = () => {
+const Chat = ({ availableHeight }) => {
   const [messages, setMessages] = useState([]);
   const [userInput, setUserInput] = useState("");
   const [fontSize, setFontSize] = useState(16);
   const [isSending, setIsSending] = useState(false);
+  const chatContainerRef = useRef(null);
+
   const initializationLock = useRef(false);
 
   const { user, loading } = useAuth();
@@ -19,6 +23,60 @@ const Chat = () => {
 
   const [isInitializing, setIsInitializing] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    const adjustHeight = () => {
+      const navbarHeight = document.querySelector("nav")?.offsetHeight || 60; // Navbar height
+      const chatPageContainer = document.querySelector(`.${styles.chatPageContainer}`);
+      const chatInputHeight = document.querySelector(`.${styles.chatForm}`)?.offsetHeight || 50; // Chat input form height
+
+      if (chatPageContainer) {
+        // Ensure the height accounts for both navbar and chat input
+        chatPageContainer.style.height = `${window.innerHeight - navbarHeight - chatInputHeight}px`;
+      }
+    };
+
+    window.addEventListener("resize", adjustHeight);
+    adjustHeight(); // Initial adjustment
+
+    return () => {
+      window.removeEventListener("resize", adjustHeight);
+    };
+  }, []);
+
+
+
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      setTimeout(() => {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }, 10); // Slight delay for DOM to update
+    }
+  }, [messages, isTyping]);
+
+
+
+  useEffect(() => {
+    console.log("Messages updated:", messages);
+    messages.forEach((msg, index) => {
+      console.log(
+        `Message at index ${index}: ${msg.content}, Sender: ${msg.senderId}`
+      );
+    });
+  }, [messages]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      console.log("Messages updated:", messages);
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    const chatContainer = document.querySelector(`.${styles.chatMessages}`);
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  }, [messages, isTyping]);
 
   // Initialize conversation, assistant, and thread
   useEffect(() => {
@@ -197,46 +255,68 @@ const Chat = () => {
     );
   }
 
-
   return (
-    <div className={styles.chatContainer}>
-      <div className={styles.chatHeader}>
+    <div className={styles.chatContainer} style={{ height: `${availableHeight}px` }}>
+      {/* Font Size Controls */}
+      <div className={styles.fontSizeControls}>
         <button
           className={styles.fontSizeButton}
-          onClick={() => setFontSize((size) => Math.min(size + 2, 24))}
+          onClick={() => setFontSize((size) => Math.min(size + 2, 24))} // Increase font size, max 24px
         >
           A+
         </button>
         <button
           className={styles.fontSizeButton}
-          onClick={() => setFontSize((size) => Math.max(size - 2, 12))}
+          onClick={() => setFontSize((size) => Math.max(size - 2, 12))} // Decrease font size, min 12px
         >
           A-
         </button>
-        <button className={styles.fontSizeButton} onClick={() => setFontSize(16)}>
+        <button
+          className={styles.fontSizeButton}
+          onClick={() => setFontSize(16)} // Reset font size to default
+        >
           Reset
         </button>
       </div>
-      <div className={styles.chatMessages}>
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`${styles.chatMessage} ${msg.senderId === "Beta" ? styles.chatMessageAI : styles.chatMessageUser
-              }`}
-            style={{ fontSize: `${fontSize}px` }}
-          >
-            <strong>{renderMessageSender(msg)}:</strong> {renderContent(msg.content)}
-          </div>
-        ))}
+
+      {/* Chat Messages */}
+      <div className={styles.chatMessages} ref={chatContainerRef}>
+        {/* Render messages */}
+        {messages.map((msg, index) => {
+          if (!msg.content || !msg.senderId) {
+            console.warn(`Skipping message at index ${index}: Missing content or senderId`);
+            return null;
+          }
+
+          const isBeta = msg.senderId === "Beta";
+          const senderName = isBeta ? "Beta" : user?.firstName || "User";
+
+          return (
+            <div
+              key={index}
+              className={`${styles.chatMessage} ${isBeta ? styles.chatMessageAI : styles.chatMessageUser}`}
+            >
+              <strong>{senderName}:</strong> {msg.content}
+            </div>
+          );
+        })}
+
+        {/* Typing Indicator */}
         {isTyping && (
-          <div className={styles.typingIndicator}>
-            <span>.</span>
-            <span>.</span>
-            <span>.</span>
+          <div className={styles.typingMessage}>
+            <span className={styles.typingIndicator}>
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
+            </span>
           </div>
         )}
       </div>
 
+
+
+
+      {/* Input Form */}
       <form className={styles.chatForm} onSubmit={sendMessage}>
         <input
           className={styles.chatInput}
@@ -246,12 +326,20 @@ const Chat = () => {
           onChange={(e) => setUserInput(e.target.value)}
           disabled={isSending || isInitializing}
         />
-        <button className={styles.chatSendButton} type="submit" disabled={isSending || isInitializing}>
+        <button
+          className={styles.chatSendButton}
+          type="submit"
+          disabled={isSending || isInitializing}
+        >
           {isSending ? "Sending..." : "Send"}
         </button>
       </form>
     </div>
   );
+
+
+
+
 };
 
 export default Chat;
