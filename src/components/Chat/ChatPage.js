@@ -1,13 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import Chat from "./Chat";
 import styles from "./ChatPage.module.css";
+import useAdjustHeight from "../../hooks/useAdjustHeight";
 
 const ChatPage = () => {
   const [hideTitle, setHideTitle] = useState(false);
   const welcomeMessageRef = useRef(null); // Ref for the welcome message
   const chatContainerRef = useRef(null); // Ref for the chat container
 
-  const [availableHeight, setAvailableHeight] = useState(0); // State to store calculated height
+  // Customizable values
+  const navbarHeight = 56; // Default height of navbar
+  const footerHeight = 0; // Footer is part of the chat form, no extra height needed
+
+  // Call useAdjustHeight with dynamic navbarHeight
+  const availableHeight = useAdjustHeight({
+    navbarHeight,
+    titleRef: welcomeMessageRef,
+    footerHeight,
+    hideTitle, // Pass hideTitle here
+  });
 
   // Hide the title after 3 seconds
   useEffect(() => {
@@ -16,25 +27,6 @@ const ChatPage = () => {
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
-
-  // Adjust the available height for the chat container
-  useEffect(() => {
-    const adjustChatHeight = () => {
-      const navbarHeight = document.querySelector("nav")?.offsetHeight || 56; // Navbar height
-      const titleHeight =
-        welcomeMessageRef.current && !hideTitle
-          ? welcomeMessageRef.current.offsetHeight
-          : 0; // Title height only if visible
-      const footerHeight = 0; // Footer is part of chatForm, no extra height needed
-      const calculatedHeight = window.innerHeight - navbarHeight - titleHeight - footerHeight;
-      setAvailableHeight(calculatedHeight); // Update state
-    };
-
-    adjustChatHeight(); // Initial adjustment
-    window.addEventListener("resize", adjustChatHeight); // Recalculate on resize
-
-    return () => window.removeEventListener("resize", adjustChatHeight); // Cleanup
-  }, [hideTitle]);
 
   return (
     <div className={styles.chatPageContainer}>
@@ -49,7 +41,6 @@ const ChatPage = () => {
         className={styles.chatContainer}
         style={{
           height: `${availableHeight}px`, // Dynamic height calculation
-          border: "2px dashed red", // Debug only; remove after verification
         }}
       >
         <Chat availableHeight={availableHeight} /> {/* Pass the calculated height */}
